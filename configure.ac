@@ -461,23 +461,14 @@ fi_="fi_"
 AC_SUBST([fi_])
 
 cfgoutputs_in="${srcroot}Makefile.in"
-cfgoutputs_in="${cfgoutputs_in} ${srcroot}doc/html.xsl.in"
-cfgoutputs_in="${cfgoutputs_in} ${srcroot}doc/manpages.xsl.in"
-cfgoutputs_in="${cfgoutputs_in} ${srcroot}doc/faultinject.xml.in"
 cfgoutputs_in="${cfgoutputs_in} ${srcroot}include/faultinject/faultinject_macros.h.in"
 cfgoutputs_in="${cfgoutputs_in} ${srcroot}include/faultinject/faultinject_protos.h.in"
 
 cfgoutputs_out="Makefile"
-cfgoutputs_out="${cfgoutputs_out} doc/html.xsl"
-cfgoutputs_out="${cfgoutputs_out} doc/manpages.xsl"
-cfgoutputs_out="${cfgoutputs_out} doc/faultinject.xml"
 cfgoutputs_out="${cfgoutputs_out} include/faultinject/faultinject_macros.h"
 cfgoutputs_out="${cfgoutputs_out} include/faultinject/faultinject_protos.h"
 
 cfgoutputs_tup="Makefile"
-cfgoutputs_tup="${cfgoutputs_tup} doc/html.xsl:doc/html.xsl.in"
-cfgoutputs_tup="${cfgoutputs_tup} doc/manpages.xsl:doc/manpages.xsl.in"
-cfgoutputs_tup="${cfgoutputs_tup} doc/faultinject.xml:doc/faultinject.xml.in"
 cfgoutputs_tup="${cfgoutputs_tup} include/faultinject/faultinject_macros.h:include/faultinject/faultinject_macros.h.in"
 cfgoutputs_tup="${cfgoutputs_tup} include/faultinject/faultinject_protos.h:include/faultinject/faultinject_protos.h.in"
 
