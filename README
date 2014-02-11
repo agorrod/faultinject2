@@ -1,0 +1,14 @@
+faultinject is a library designed to stress test applications. It is designed
+to return errors from standard system library calls. The project was
+developed by WiredTiger.
+
+The general project layout is based on the jemalloc project.
+
+The COPYING file contains copyright and licensing information.
+
+The INSTALL file contains information on how to configure, build, and install
+faultinject.
+
+The ChangeLog file contains a brief summary of changes for each release.
+
+URL: http://www.wiredtiger.com

@@ -1,0 +1,61 @@
+#include <limits.h>
+#include <strings.h>
+
+#define	FAULTINJECT_VERSION "@faultinject_version@"
+#define	FAULTINJECT_VERSION_MAJOR @faultinject_version_major@
+#define	FAULTINJECT_VERSION_MINOR @faultinject_version_minor@
+#define	FAULTINJECT_VERSION_BUGFIX @faultinject_version_bugfix@
+#define	FAULTINJECT_VERSION_NREV @faultinject_version_nrev@
+#define	FAULTINJECT_VERSION_GID "@faultinject_version_gid@"
+
+#  define MALLOCX_LG_ALIGN(la)	(la)
+#  if LG_SIZEOF_PTR == 2
+#    define MALLOCX_ALIGN(a)	(ffs(a)-1)
+#  else
+#    define MALLOCX_ALIGN(a)						\
+	 ((a < (size_t)INT_MAX) ? ffs(a)-1 : ffs(a>>32)+31)
+#  endif
+#  define MALLOCX_ZERO	((int)0x40)
+/* Bias arena index bits so that 0 encodes "MALLOCX_ARENA() unspecified". */
+#  define MALLOCX_ARENA(a)	((int)(((a)+1) << 8))
+
+#ifdef FAULTINJECT_EXPERIMENTAL
+#  define ALLOCM_LG_ALIGN(la)	(la)
+#  if LG_SIZEOF_PTR == 2
+#    define ALLOCM_ALIGN(a)	(ffs(a)-1)
+#  else
+#    define ALLOCM_ALIGN(a)						\
+	 ((a < (size_t)INT_MAX) ? ffs(a)-1 : ffs(a>>32)+31)
+#  endif
+#  define ALLOCM_ZERO	((int)0x40)
+#  define ALLOCM_NO_MOVE	((int)0x80)
+/* Bias arena index bits so that 0 encodes "ALLOCM_ARENA() unspecified". */
+#  define ALLOCM_ARENA(a)	((int)(((a)+1) << 8))
+#  define ALLOCM_SUCCESS	0
+#  define ALLOCM_ERR_OOM	1
+#  define ALLOCM_ERR_NOT_MOVED	2
+#endif
+
+#ifdef FAULTINJECT_HAVE_ATTR
+#  define FAULTINJECT_ATTR(s) __attribute__((s))
+#  define FAULTINJECT_EXPORT FAULTINJECT_ATTR(visibility("default"))
+#  define FAULTINJECT_ALIGNED(s) FAULTINJECT_ATTR(aligned(s))
+#  define FAULTINJECT_SECTION(s) FAULTINJECT_ATTR(section(s))
+#  define FAULTINJECT_NOINLINE FAULTINJECT_ATTR(noinline)
+#elif _MSC_VER
+#  define FAULTINJECT_ATTR(s)
+#  ifdef DLLEXPORT
+#    define FAULTINJECT_EXPORT __declspec(dllexport)
+#  else
+#    define FAULTINJECT_EXPORT __declspec(dllimport)
+#  endif
+#  define FAULTINJECT_ALIGNED(s) __declspec(align(s))
+#  define FAULTINJECT_SECTION(s) __declspec(allocate(s))
+#  define FAULTINJECT_NOINLINE __declspec(noinline)
+#else
+#  define FAULTINJECT_ATTR(s)
+#  define FAULTINJECT_EXPORT
+#  define FAULTINJECT_ALIGNED(s)
+#  define FAULTINJECT_SECTION(s)
+#  define FAULTINJECT_NOINLINE
+#endif

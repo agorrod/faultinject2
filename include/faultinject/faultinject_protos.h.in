@@ -1,0 +1,58 @@
+/*
+ * The @fi_@ prefix on the following public symbol declarations is an artifact
+ * of namespace management, and should be omitted in application code unless
+ * FAULTINJECT_NO_DEMANGLE is defined (see faultinject_mangle@install_suffix@.h).
+ */
+extern FAULTINJECT_EXPORT const char	*@fi_@malloc_conf;
+extern FAULTINJECT_EXPORT void		(*@fi_@malloc_message)(void *cbopaque,
+    const char *s);
+
+FAULTINJECT_EXPORT void	*@fi_@malloc(size_t size) FAULTINJECT_ATTR(malloc);
+FAULTINJECT_EXPORT void	*@fi_@calloc(size_t num, size_t size)
+    FAULTINJECT_ATTR(malloc);
+FAULTINJECT_EXPORT int	@fi_@posix_memalign(void **memptr, size_t alignment,
+    size_t size) FAULTINJECT_ATTR(nonnull(1));
+FAULTINJECT_EXPORT void	*@fi_@aligned_alloc(size_t alignment, size_t size)
+    FAULTINJECT_ATTR(malloc);
+FAULTINJECT_EXPORT void	*@fi_@realloc(void *ptr, size_t size);
+FAULTINJECT_EXPORT void	@fi_@free(void *ptr);
+
+FAULTINJECT_EXPORT void	*@fi_@mallocx(size_t size, int flags);
+FAULTINJECT_EXPORT void	*@fi_@rallocx(void *ptr, size_t size, int flags);
+FAULTINJECT_EXPORT size_t	@fi_@xallocx(void *ptr, size_t size, size_t extra,
+    int flags);
+FAULTINJECT_EXPORT size_t	@fi_@sallocx(const void *ptr, int flags);
+FAULTINJECT_EXPORT void	@fi_@dallocx(void *ptr, int flags);
+FAULTINJECT_EXPORT size_t	@fi_@nallocx(size_t size, int flags);
+
+FAULTINJECT_EXPORT int	@fi_@mallctl(const char *name, void *oldp,
+    size_t *oldlenp, void *newp, size_t newlen);
+FAULTINJECT_EXPORT int	@fi_@mallctlnametomib(const char *name, size_t *mibp,
+    size_t *miblenp);
+FAULTINJECT_EXPORT int	@fi_@mallctlbymib(const size_t *mib, size_t miblen,
+    void *oldp, size_t *oldlenp, void *newp, size_t newlen);
+FAULTINJECT_EXPORT void	@fi_@malloc_stats_print(void (*write_cb)(void *,
+    const char *), void *@fi_@cbopaque, const char *opts);
+FAULTINJECT_EXPORT size_t	@fi_@malloc_usable_size(
+    FAULTINJECT_USABLE_SIZE_CONST void *ptr);
+
+#ifdef FAULTINJECT_OVERRIDE_MEMALIGN
+FAULTINJECT_EXPORT void *	@fi_@memalign(size_t alignment, size_t size)
+    FAULTINJECT_ATTR(malloc);
+#endif
+
+#ifdef FAULTINJECT_OVERRIDE_VALLOC
+FAULTINJECT_EXPORT void *	@fi_@valloc(size_t size) FAULTINJECT_ATTR(malloc);
+#endif
+
+#ifdef FAULTINJECT_EXPERIMENTAL
+FAULTINJECT_EXPORT int	@fi_@allocm(void **ptr, size_t *rsize, size_t size,
+    int flags) FAULTINJECT_ATTR(nonnull(1));
+FAULTINJECT_EXPORT int	@fi_@rallocm(void **ptr, size_t *rsize, size_t size,
+    size_t extra, int flags) FAULTINJECT_ATTR(nonnull(1));
+FAULTINJECT_EXPORT int	@fi_@sallocm(const void *ptr, size_t *rsize, int flags)
+    FAULTINJECT_ATTR(nonnull(1));
+FAULTINJECT_EXPORT int	@fi_@dallocm(void *ptr, int flags)
+    FAULTINJECT_ATTR(nonnull(1));
+FAULTINJECT_EXPORT int	@fi_@nallocm(size_t *rsize, size_t size, int flags);
+#endif

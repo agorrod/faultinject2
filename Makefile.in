@@ -1,0 +1,242 @@
+# Clear out all vpaths, then set just one (default vpath) for the main build
+# directory.
+vpath
+vpath % .
+
+# Clear the default suffixes, so that built-in rules are not used.
+.SUFFIXES :
+
+SHELL := /bin/sh
+
+CC := @CC@
+
+# Configuration parameters.
+DESTDIR =
+BINDIR := $(DESTDIR)@BINDIR@
+INCLUDEDIR := $(DESTDIR)@INCLUDEDIR@
+LIBDIR := $(DESTDIR)@LIBDIR@
+DATADIR := $(DESTDIR)@DATADIR@
+MANDIR := $(DESTDIR)@MANDIR@
+srcroot := @srcroot@
+objroot := @objroot@
+abs_srcroot := @abs_srcroot@
+abs_objroot := @abs_objroot@
+
+# Build parameters.
+CPPFLAGS := @CPPFLAGS@ -I$(srcroot)include -I$(objroot)include
+CFLAGS := @CFLAGS@
+LDFLAGS := @LDFLAGS@
+EXTRA_LDFLAGS := @EXTRA_LDFLAGS@
+LIBS := @LIBS@
+RPATH_EXTRA := @RPATH_EXTRA@
+SO := @so@
+IMPORTLIB := @importlib@
+O := @o@
+A := @a@
+EXE := @exe@
+LIBPREFIX := @libprefix@
+REV := @rev@
+install_suffix := @install_suffix@
+ABI := @abi@
+XSLTPROC := @XSLTPROC@
+AUTOCONF := @AUTOCONF@
+_RPATH = @RPATH@
+RPATH = $(if $(1),$(call _RPATH,$(1)))
+cfghdrs_in := @cfghdrs_in@
+cfghdrs_out := @cfghdrs_out@
+cfgoutputs_in := @cfgoutputs_in@
+cfgoutputs_out := @cfgoutputs_out@
+enable_autogen := @enable_autogen@
+enable_code_coverage := @enable_code_coverage@
+enable_experimental := @enable_experimental@
+enable_zone_allocator := @enable_zone_allocator@
+DSO_LDFLAGS = @DSO_LDFLAGS@
+SOREV = @SOREV@
+PIC_CFLAGS = @PIC_CFLAGS@
+CTARGET = @CTARGET@
+LDTARGET = @LDTARGET@
+MKLIB = @MKLIB@
+AR = @AR@
+ARFLAGS = @ARFLAGS@
+CC_MM = @CC_MM@
+
+ifeq (macho, $(ABI))
+TEST_LIBRARY_PATH := DYLD_FALLBACK_LIBRARY_PATH="$(objroot)lib"
+else
+ifeq (pecoff, $(ABI))
+TEST_LIBRARY_PATH := PATH="$(PATH):$(objroot)lib"
+else
+TEST_LIBRARY_PATH :=
+endif
+endif
+
+LIBFAULTINJECT := $(LIBPREFIX)faultinject$(install_suffix)
+
+# Lists of files.
+BINS := $(srcroot)bin/pprof $(objroot)bin/faultinject.sh
+C_HDRS := $(objroot)include/faultinject/faultinject$(install_suffix).h
+C_SRCS := $(srcroot)src/faultinject.c 
+ifeq ($(IMPORTLIB),$(SO))
+STATIC_LIBS := $(objroot)lib/$(LIBFAULTINJECT).$(A)
+endif
+ifdef PIC_CFLAGS
+STATIC_LIBS += $(objroot)lib/$(LIBFAULTINJECT)_pic.$(A)
+else
+STATIC_LIBS += $(objroot)lib/$(LIBFAULTINJECT)_s.$(A)
+endif
+DSOS := $(objroot)lib/$(LIBFAULTINJECT).$(SOREV)
+ifneq ($(SOREV),$(SO))
+DSOS += $(objroot)lib/$(LIBFAULTINJECT).$(SO)
+endif
+
+C_OBJS := $(C_SRCS:$(srcroot)%.c=$(objroot)%.$(O))
+C_PIC_OBJS := $(C_SRCS:$(srcroot)%.c=$(objroot)%.pic.$(O))
+C_JET_OBJS := $(C_SRCS:$(srcroot)%.c=$(objroot)%.jet.$(O))
+
+.PHONY: all dist 
+.PHONY: install_bin install_include install_lib
+.PHONY: distclean relclean
+
+# Default target.
+all: build_lib
+
+dist: all
+
+#
+# Include generated dependency files.
+#
+ifdef CC_MM
+-include $(C_OBJS:%.$(O)=%.d)
+-include $(C_PIC_OBJS:%.$(O)=%.d)
+-include $(C_JET_OBJS:%.$(O)=%.d)
+endif
+
+$(C_OBJS): $(objroot)src/%.$(O): $(srcroot)src/%.c
+$(C_PIC_OBJS): $(objroot)src/%.pic.$(O): $(srcroot)src/%.c
+$(C_PIC_OBJS): CFLAGS += $(PIC_CFLAGS)
+$(C_JET_OBJS): $(objroot)src/%.jet.$(O): $(srcroot)src/%.c
+$(C_JET_OBJS): CFLAGS += -DFAULTINJECT_JET
+ifneq ($(IMPORTLIB),$(SO))
+$(C_OBJS): CPPFLAGS += -DDLLEXPORT
+endif
+
+ifndef CC_MM
+# Dependencies.
+HEADER_DIRS = $(srcroot)include/faultinject \
+	$(objroot)include/faultinject
+HEADERS = $(wildcard $(foreach dir,$(HEADER_DIRS),$(dir)/*.h))
+$(C_OBJS) $(C_PIC_OBJS) $(C_JET_OBJS): $(HEADERS)
+endif
+
+$(C_OBJS) $(C_PIC_OBJS) $(C_JET_OBJS): %.$(O):
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $(CPPFLAGS) $(CTARGET) $<
+ifdef CC_MM
+	@$(CC) -MM $(CPPFLAGS) -MT $@ -o $(@:%.$(O)=%.d) $<
+endif
+
+ifneq ($(SOREV),$(SO))
+%.$(SO) : %.$(SOREV)
+	@mkdir -p $(@D)
+	ln -sf $(<F) $@
+endif
+
+$(objroot)lib/$(LIBFAULTINJECT).$(SOREV) : $(if $(PIC_CFLAGS),$(C_PIC_OBJS),$(C_OBJS))
+	@mkdir -p $(@D)
+	$(CC) $(DSO_LDFLAGS) $(call RPATH,$(RPATH_EXTRA)) $(LDTARGET) $+ $(LDFLAGS) $(LIBS) $(EXTRA_LDFLAGS)
+
+$(objroot)lib/$(LIBFAULTINJECT)_pic.$(A) : $(C_PIC_OBJS)
+$(objroot)lib/$(LIBFAULTINJECT).$(A) : $(C_OBJS)
+$(objroot)lib/$(LIBFAULTINJECT)_s.$(A) : $(C_OBJS)
+
+$(STATIC_LIBS):
+	@mkdir -p $(@D)
+	$(AR) $(ARFLAGS)@AROUT@ $+
+
+build_lib_shared: $(DSOS)
+build_lib_static: $(STATIC_LIBS)
+build_lib: build_lib_shared build_lib_static
+
+install_bin:
+	install -d $(BINDIR)
+	@for b in $(BINS); do \
+	echo "install -m 755 $$b $(BINDIR)"; \
+	install -m 755 $$b $(BINDIR); \
+done
+
+install_include:
+	install -d $(INCLUDEDIR)/faultinject
+	@for h in $(C_HDRS); do \
+	echo "install -m 644 $$h $(INCLUDEDIR)/faultinject"; \
+	install -m 644 $$h $(INCLUDEDIR)/faultinject; \
+done
+
+install_lib_shared: $(DSOS)
+	install -d $(LIBDIR)
+	install -m 755 $(objroot)lib/$(LIBFAULTINJECT).$(SOREV) $(LIBDIR)
+ifneq ($(SOREV),$(SO))
+	ln -sf $(LIBFAULTINJECT).$(SOREV) $(LIBDIR)/$(LIBFAULTINJECT).$(SO)
+endif
+
+install_lib_static: $(STATIC_LIBS)
+	install -d $(LIBDIR)
+	@for l in $(STATIC_LIBS); do \
+	echo "install -m 755 $$l $(LIBDIR)"; \
+	install -m 755 $$l $(LIBDIR); \
+done
+
+install_lib: install_lib_shared install_lib_static
+
+install: install_bin install_include install_lib
+
+clean:
+	rm -f $(C_OBJS)
+	rm -f $(C_PIC_OBJS)
+	rm -f $(C_JET_OBJS)
+	rm -f $(C_OBJS:%.$(O)=%.d)
+	rm -f $(C_OBJS:%.$(O)=%.gcda)
+	rm -f $(C_OBJS:%.$(O)=%.gcno)
+	rm -f $(C_PIC_OBJS:%.$(O)=%.d)
+	rm -f $(C_PIC_OBJS:%.$(O)=%.gcda)
+	rm -f $(C_PIC_OBJS:%.$(O)=%.gcno)
+	rm -f $(C_JET_OBJS:%.$(O)=%.d)
+	rm -f $(C_JET_OBJS:%.$(O)=%.gcda)
+	rm -f $(C_JET_OBJS:%.$(O)=%.gcno)
+	rm -f $(DSOS) $(STATIC_LIBS)
+	rm -f $(objroot)*.gcov.*
+
+distclean: clean
+	rm -rf $(objroot)autom4te.cache
+	rm -f $(objroot)bin/faultinject.sh
+	rm -f $(objroot)config.log
+	rm -f $(objroot)config.status
+	rm -f $(objroot)config.stamp
+	rm -f $(cfghdrs_out)
+	rm -f $(cfgoutputs_out)
+
+relclean: distclean
+	rm -f $(objroot)configure
+	rm -f $(srcroot)VERSION
+
+#===============================================================================
+# Re-configuration rules.
+
+ifeq ($(enable_autogen), 1)
+$(srcroot)configure : $(srcroot)configure.ac
+	cd ./$(srcroot) && $(AUTOCONF)
+
+$(objroot)config.status : $(srcroot)configure
+	./$(objroot)config.status --recheck
+
+$(srcroot)config.stamp.in : $(srcroot)configure.ac
+	echo stamp > $(srcroot)config.stamp.in
+
+$(objroot)config.stamp : $(cfgoutputs_in) $(cfghdrs_in) $(srcroot)configure
+	./$(objroot)config.status
+	@touch $@
+
+# There must be some action in order for make to re-read Makefile when it is
+# out of date.
+$(cfgoutputs_out) $(cfghdrs_out) : $(objroot)config.stamp
+	@true
+endif
